@@ -1,3 +1,7 @@
 requests
 pydantic
 pytest
+fastapi 
+uvicorn
+openai 
+python-dotenv
