@@ -1,25 +1,28 @@
 # Map Agent Project
 
+An **AI Agent** that connects to **MCP-compatible map servers** to perform real-world geographic actions using external APIs like **OpenStreetMap (OSM)** and **OSRM**.
 
-This project implements two map-server "tools" as Python modules and integrates them with a simple AssistantAgent that routes queries to the servers. It follows MCP-like conventions: each server exposes a `ServerParams` dataclass and at least three operations. The project includes example scripts and simple tests.
+---
 
+## Features
+- **OSM Server** (`servers/osm_server.py`)  
+  - `geocode` – Get coordinates from an address  
+  - `reverse_geocode` – Get address from coordinates  
+  - `search_poi` – Find points of interest
 
-Supported servers
-- `servers/osm_server.py` — OpenStreetMap-backed tool (Nominatim + Overpass)
-- operations: `geocode`, `reverse_geocode`, `search_poi`
-- `servers/osrm_server.py` — OSRM-backed tool (public demo OSRM server)
-- operations: `route`, `nearest`, `table`
+- **OSRM Server** (`servers/osrm_server.py`)  
+  - `route` – Get directions between locations  
+  - `nearest` – Find the nearest road  
+  - `table` – Compute travel times/distances
 
+- **Assistant Agent** (`agents/assistant_agent.py`)  
+  Routes user prompts to the right MCP tool and interprets responses.
 
-Other files
-- `agents/assistant_agent.py` — AssistantAgent that routes user queries to servers
-- `main.py` — small interactive CLI for demoing the assistant
-- `tests/test_servers.py` — simple smoke tests / example usages
-- `requirements.txt` — Python dependencies
+---
 
+## Setup
 
-## How to run
-1. Create a virtualenv and activate it (Python 3.9+ recommended)
+1. Prepare the virtual environment
 
 
 ```bash
@@ -29,24 +32,17 @@ pip install -r requirements.txt
 ```
 
 
-2. Run demo interactive assistant
+2. Run the MCP server
+
+
+```bash
+python app/mcp_server.py
+```
+
+
+3. Run the main LLM Agent
 
 
 ```bash
 python main.py
 ```
-
-
-3. Run tests / example script
-
-
-```bash
-python tests/test_servers.py
-```
-
-
-## Configuration
-No API keys required for public Nominatim/Overpass/OSRM demo endpoints in the examples. If you need to use a hosted or private OSRM instance, set OSRM_BASE_URL in `servers/osrm_server.py` or via environment variable.
-
-
-Please respect the usage policies of the public services used (Nominatim, Overpass, OSRM demo) — use reasonable request rates.
