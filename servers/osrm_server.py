@@ -19,33 +19,59 @@ class OSRMServer:
         self.session.headers.update({'User-Agent': 'map-agent-project/1.0'})
 
     def route(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """Compute a route between two points. Accepts either:
-        - {'from': 'origin address', 'to': 'destination address'} (will attempt geocode via Nominatim if present)
-        - {'coordinates': [(lon,lat),(lon,lat)]}
         """
-        coords = params.get('coordinates')
-        if not coords and 'from' in params and 'to' in params:
-            # try to geocode using Nominatim through simple HTTP call
-            from servers.osm_server import OSMServer
-            osm = OSMServer()
-            g1 = osm.geocode({'q': params['from']})
-            g2 = osm.geocode({'q': params['to']})
+        Compute a route between two points.
+
+        Accepts:
+        - {'from': 'origin address', 'to': 'destination address'}  → will geocode via Nominatim
+        - {'coordinates': [(lon, lat), (lon, lat)]}               → direct coordinates
+
+        Returns:
+        - JSON response from OSRM /route endpoint
+        """
+
+        coords = params.get("coordinates")
+
+        print("[DEBUG] OSRM route called with params:", params)
+
+        # If no direct coordinates are given, try to geocode 'from' and 'to'
+        if not coords and "from" in params and "to" in params:
             try:
-                p1 = g1['results'][0]
-                p2 = g2['results'][0]
-                coords = [(float(p1['lon']), float(p1['lat'])), (float(p2['lon']), float(p2['lat']))]
-            except Exception:
-                return {'error': 'failed to geocode from/to'}
+                from servers.osm_server import OSMServer
+                osm = OSMServer()
+                g1 = osm.geocode({"q": params["from"]})
+                g2 = osm.geocode({"q": params["to"]})
+                p1 = g1["results"][0]
+                p2 = g2["results"][0]
+                coords = [
+                    (float(p1["lon"]), float(p1["lat"])),
+                    (float(p2["lon"]), float(p2["lat"]))
+                ]
+            except Exception as e:
+                return {"error": f"failed to geocode from/to: {e}"}
 
+        # Validate we have at least two points
         if not coords or len(coords) < 2:
-            return {'error': 'need at least two coordinates for route'}
+            return {"error": "need at least two coordinates for route"}
 
-        # build coordinates string lon,lat;lon,lat
-        coord_str = ';'.join([f"{c[0]},{c[1]}" for c in coords])
+        # Build coordinate string in OSRM format: lon,lat;lon,lat
+        coord_str = ";".join([f"{c[0]},{c[1]}" for c in coords])
+
+        print("[DEBUG] OSRM route coord_str:", coord_str)
+        
         url = f"{self.params.base_url}/route/v1/driving/{coord_str}"
-        r = self.session.get(url, params={'overview': 'simplified', 'alternatives': 'false', 'steps': 'false'})
-        r.raise_for_status()
-        return {'result': r.json()}
+
+        try:
+            response = self.session.get(url, params={
+                "overview": "simplified",
+                "alternatives": "false",
+                "steps": "false"
+            })
+            response.raise_for_status()
+            return {"result": response.json()}
+        except Exception as e:
+            return {"error": f"OSRM request failed: {e}"}
+
 
     def nearest(self, params: Dict[str, Any]) -> Dict[str, Any]:
         lat = params.get('lat') or (params.get('coordinates') and params['coordinates'][0][1])

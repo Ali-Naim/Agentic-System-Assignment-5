@@ -93,12 +93,30 @@ def osrm_route(req: RouteRequest):
         from_coords = osm.geocode({"q": req.from_addr})
         to_coords = osm.geocode({"q": req.to_addr})
 
+        # print(f"[INFO] Routing request: from {from_coords} to {to_coords}")
+
         if not from_coords or not to_coords:
             raise HTTPException(status_code=400, detail="Could not geocode one or both addresses.")
 
-        # Step 2: Build coordinates (lon, lat)
-        from_coord = (float(from_coords[0]["lon"]), float(from_coords[0]["lat"]))
-        to_coord = (float(to_coords[0]["lon"]), float(to_coords[0]["lat"]))
+        beirut_result = next(
+            (r for r in from_coords["results"] if "لبنان" in r["display_name"] or "Lebanon" in r["display_name"]),
+            from_coords["results"][0]
+        )
+        from_coord = (
+            float(beirut_result["lon"]),
+            float(beirut_result["lat"])
+        )
+
+        tripoli_result = next(
+            (r for r in to_coords["results"] if "لبنان" in r["display_name"] or "Lebanon" in r["display_name"]),
+            to_coords["results"][0]  # fallback
+        )
+
+        to_coord = (
+            float(tripoli_result["lon"]),
+            float(tripoli_result["lat"])
+        )
+        print(f"[INFO] Routing from {from_coord} to {to_coord}")
 
         # Step 3: Request route from OSRM
         route_data = osrm.route({"coordinates": [from_coord, to_coord]})
