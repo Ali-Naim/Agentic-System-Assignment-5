@@ -36,7 +36,7 @@ pip install -r requirements.txt
 
 
 ```bash
-python app/mcp_server.py
+python app/mcp_server.py #or uvicorn app.mcp_server:app --reload --host 0.0.0.0 --port 8000
 ```
 
 
